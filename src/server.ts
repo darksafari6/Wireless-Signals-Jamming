@@ -12,7 +12,9 @@ import {WebSocketServer, WebSocket} from 'ws';
 const browserDistFolder = join(import.meta.dirname, '../browser');
 
 const app = express();
+app.set('trust proxy', true);
 const angularApp = new AngularNodeAppEngine();
+
 const server = createServer(app);
 const wss = new WebSocketServer({server});
 
@@ -20,7 +22,7 @@ const wss = new WebSocketServer({server});
 const mockDevices = [
   { ssid: 'Home_Plus_5G', mac: 'AA:BB:CC:11:22:33', rssi: -45, hidden: false, channel: 36, type: 'AP' },
   { ssid: 'Starlink_Guest', mac: 'FF:EE:DD:44:55:66', rssi: -62, hidden: false, channel: 6, type: 'AP' },
-  { ssid: '<HIDDEN>', mac: '00:11:22:33:44:55', rssi: -70, hidden: true, channel: 11, type: 'AP' },
+  { ssid: '[HIDDEN]', mac: '00:11:22:33:44:55', rssi: -70, hidden: true, channel: 11, type: 'AP' },
   { ssid: 'Neighbor_Wifi', mac: '99:88:77:66:55:44', rssi: -85, hidden: false, channel: 1, type: 'AP' },
   // Target devices for tracking
   { name: "Child's iPhone", mac: 'CC:BB:AA:33:22:11', rssi: -50, type: 'Client', parentMac: 'AA:BB:CC:11:22:33' },
@@ -46,56 +48,35 @@ function generateWifiUpdate() {
 }
 
 wss.on('connection', (ws) => {
-  console.log('Client connected to Wi-Fi Stream');
-  
   const interval = setInterval(() => {
     if (ws.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify({
-        type: 'wifi_update',
-        data: generateWifiUpdate()
-      }));
+      ws.send(JSON.stringify({ type: 'wifi_update', data: generateWifiUpdate() }));
     }
   }, 2000);
-
   ws.on('close', () => clearInterval(interval));
 });
 
-/**
- * Serve static files from /browser
- */
-app.use(
-  express.static(browserDistFolder, {
-    maxAge: '1y',
-    index: false,
-    redirect: false,
-  }),
-);
+// Health check
+app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
-/**
- * Handle all other requests by rendering the Angular application.
- */
+// Static files
+app.use(express.static(browserDistFolder, {
+  maxAge: '1y',
+  index: false,
+  redirect: false,
+}));
+
+// SSR
 app.use((req, res, next) => {
-  angularApp
-    .handle(req)
-    .then((response) =>
-      response ? writeResponseToNodeResponse(response, res) : next(),
-    )
+  angularApp.handle(req)
+    .then((response) => response ? writeResponseToNodeResponse(response, res) : next())
     .catch(next);
 });
 
-/**
- * Start the server if this module is the main entry point, or it is ran via PM2.
- */
 if (isMainModule(import.meta.url) || process.env['pm_id']) {
   const port = process.env['PORT'] || 3000;
   server.listen(port, () => {
     console.log(`Node Express server listening on http://localhost:${port}`);
-  }).on('error', (err: any) => {
-    if (err.code === 'EADDRINUSE') {
-      console.warn(`Port ${port} is already in use. Assuming ng serve is handling the listening.`);
-    } else {
-      console.error('Server error:', err);
-    }
   });
 }
 
