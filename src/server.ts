@@ -90,6 +90,12 @@ if (isMainModule(import.meta.url) || process.env['pm_id']) {
   const port = process.env['PORT'] || 3000;
   server.listen(port, () => {
     console.log(`Node Express server listening on http://localhost:${port}`);
+  }).on('error', (err: any) => {
+    if (err.code === 'EADDRINUSE') {
+      console.warn(`Port ${port} is already in use. Assuming ng serve is handling the listening.`);
+    } else {
+      console.error('Server error:', err);
+    }
   });
 }
 

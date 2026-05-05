@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { WifiService, WifiDevice } from './wifi';
+import { WifiService } from './wifi';
 import { MatIconModule } from '@angular/material/icon';
 import { LucideAngularModule, Shield, Wifi, Users, Signal, AlertTriangle, Search, Trash2, Plus } from 'lucide-angular';
 
