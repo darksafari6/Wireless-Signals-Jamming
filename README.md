@@ -1,143 +1,89 @@
-# 🛡️ HomeSync Wi-Fi Sentinel (Advanced Python TUI Edition)
-### Professional Parental Monitoring, Security Auditing & Network Surveillance
+# 🛡️ HomeSync Wi-Fi Sentinel (Enterprise Python Edition)
+### Professional Device Tracking, Threat Hunting & Network Telemetry
 
-HomeSync is a high-density Wi-Fi surveillance tool designed strictly as a **Python Terminal User Interface (TUI)**. Built using the `rich` library and `scapy`, it bridges the gap between low-level packet sniffing and professional-grade visual monitoring directly in your terminal. It features deep packet inspection capabilities such as WPA handshake capture notification, Deauth attack detection, target tracking, and real-time visualization.
-
----
-
-## 📸 TUI Dashboard Highlights & Capabilities
-The terminal UI runs directly in your SSH session or local terminal, offering a split-pane "Mission Control" view:
-- **📡 Surrounding Networks**: Live, color-coded feed of all Access Points, updated multiple times per second. Tracks connection count via active data-link layer inspection.
-- **👨‍👩‍👧 Watchlist & Target Tracking**: A dedicated sidebar to monitor specific family devices or target clients via their MAC addresses to track when they enter or leave the radio bounds.
-- **🚫 Hidden Network Detection**: Detects SSIDs that are marked as "Hidden" and automatically de-masks them if a client probes for them.
-- **⚠️ Deep Packet Inspection & Security Alerts**: 
-  - Detects **EAPOL Handshakes** (WPA/WPA2 4-Way Handshake intercepts).
-  - Detects **Deauthentication Packets**, instantly flagging potential "Evil Twin" or DoS attacks.
-- **💾 Packet Logging (PCAP)**: Stream raw `802.11` frames to a pcap file for later viewing in Wireshark.
-- **📊 Offline Reporting**: Export all discovered networks and their statuses to CSV or JSON upon exit.
+HomeSync is a high-density Wi-Fi surveillance platform designed entirely in Python. By utilizing `scapy`, `rich`, and `sqlite3`, it acts as a standalone Terminal User Interface (TUI) monitor that operates autonomously without any heavy web servers.
 
 ---
 
-## 🛠️ System Architecture & Dependencies
-This is a 100% Python project.
+## 🔥 Key Enterprise Features (v2.0)
+The Sentinel spans multiple highly optimized, threaded `.py` files and features real-time logging, math computations, and active threat scoring.
 
-- **`scapy`**: For intercepting raw `802.11` management, control, and data frames.
-- **`rich`**: For the beautiful, lightweight, and hardware-accelerated terminal interface.
-- **Root Privileges**: Required to access hardware in monitor mode (`wlan0mon`, `wlp2s0mon`, etc).
+1. **📊 Persistent SQLite Database**: All seen networks, clients, probe requests, and security logs are recorded into `homesync.db`, offering complete historic querying beyond the memory session.
+2. **📉 Network Anomaly Score (NAS)**: Dynamically computes a 0-100 Threat Score based on active EAPOLs, Beacon Floods, Rogue APs, and Deauth attacks, decaying organically over time.
+3. **🔋 Sparkline Telemetry UI**: Visually graphs Signal Strength (RSSI) in the terminal directly using ` ▂▃▄▅▆▇█` to easily see if a target is approaching or retreating.
+4. **🎭 MAC Randomization Detection**: Checks the IEEE Locally Administered Bit (U/L) to explicitly flag randomized iOS / Android tracking MAC addresses in [Red].
+5. **📱 Massive Manufacturer OUI Dictionary**: Built-in definitions resolving vendors (Ubiquiti, Apple, Cisco, Huawei, etc.) on the fly.
+6. **📏 Dynamic Distance Estimation**: Live Math computations resolving Free-Space Path Loss (FSPL) using channel frequencies to guess proximity in meters `(~8.4m)`.
+7. **🔐 WPS / Encryption Scraper**: Probes the raw Information Elements inside frame beacons to assess and surface exact network security protocols (`WPA2/WPS`).
+8. **🦇 Rogue AP / Evil Twin Tracker**: Alerts you natively if multiple MAC addresses broadcast the identical `SSID` with varying encryption headers within a 15-second window.
+9. **🕵️ Target Heatmapping & Probes**: Uncovers Hidden SSIDs actively, while tracking specific devices and mapping their previously connected networks via explicit Probe Requests.
+10. **🗃 Modular Thread-Safe Architecture**: Rebuilt entirely with `Mutex Locks` handling context injection natively between UI render threads and packet interception threads.
 
 ---
 
-## 🔌 Hardware Requirements
-To capture Wi-Fi activity without being connected to a network, you **MUST** have a Wi-Fi adapter that supports **Monitor Mode** and **Packet Injection**.
-
-### Recommended Chipsets:
-- **Atheros AR9271** (Alfa AWUS036NHA) - *Gold standard for Linux*
-- **Ralink RT3070** (Alfa AWUS036NH)
-- **Realtek RTL8812AU** (Requires specific drivers)
-- **Raspberry Pi 3/4/5** (Built-in chip supports monitor mode with `nexmon` patches)
+## 🛠️ Architecture & Files
+- `main.py`: Entry CLI parser and TUI initializer.
+- `scanner.py`: Background thread routines for `scapy` deep packet interception.
+- `database.py`: Zero-config SQLite schema and connection pooling.
+- `ui.py`: Multi-panel, responsive terminal render loop using `rich`.
+- `state.py`: Global atomic context dictionary with thread `Lock()`.
+- `utils.py`: Distance math, anomaly logic, and OUI resolution.
+- `constants.py`: Fixed IEEE definitions and channels.
 
 ---
 
 ## 📥 Installation
 
-Ensure your system is updated and install the required system tools:
 ```bash
 # Add essential system tracking tools
-sudo apt update && sudo apt install aircrack-ng tcpdump python3-pip -y
+sudo apt update && sudo apt install aircrack-ng tcpdump python3-pip sqlite3 -y
 
 # Install Python Requirements
-pip3 install rich scapy
+pip3 install -r requirements.txt
 ```
 
 ### 1. Enabling Monitor Mode
 You must switch your interface to monitor mode before running the software.
 ```bash
-# Locate your interface (usually wlan0)
-iw dev
-
-# Kill conflicting processes (NetworkManager, wpa_supplicant)
 sudo airmon-ng check kill
-
-# Start monitor mode
 sudo airmon-ng start wlan0
-
-# Verify interface name (usually wlan0mon or wlan0)
-iwconfig
+iwconfig  # Usually assigns to wlan0mon or remains wlan0
 ```
 
 ---
 
-## 🚀 Usage & Deployment Tools
+## 🚀 Usage & Deployment
 
-The `main.py` is equipped with a comprehensive CLI constructed via `argparse`, offering 100% working flags for professional auditing.
-
-### Show Help Menu
-Print all available arguments, filters, and features:
+### Show Help Menu & Options
 ```bash
 python3 main.py --help
 ```
-*Output snippet:*
-```text
-options:
-  -h, --help            show this help message and exit
-  -i INTERFACE, --interface INTERFACE
-                        Monitor mode interface to use (default: wlan0mon)
-  -w WATCHLIST [WATCHLIST ...], --watchlist WATCHLIST [WATCHLIST ...]
-                        List of MAC addresses to track in the Family Watchlist
-  -b {2.4G,5G,ALL}, --band {2.4G,5G,ALL}
-                        Wi-Fi bands to scan (default: ALL)
-  --pcap PCAP           Save all captured packets to a PCAP file
-  --export EXPORT       Export discovered APs to a CSV or JSON file on exit
-  --demo-mode           Force demo mode even if root (useful for testing UI)
+
+### 1. The Home Guardian (Parental Control)
+Track specific family devices and persist everything to the local database.
+```bash
+sudo python3 main.py -i wlan0mon -w 00:11:22:33:44:55 F4:F5:E8:AA:BB:CC
 ```
 
-### Advanced Examples
-
-**1. Track specific Devices (Parental Control Mode)**
-Tracks devices via `-w` flag and uses default band sweeping.
+### 2. High-Density Security Audit (Red Team)
+Monitor only the 5GHz spectrum, log all frames to PCAP, export final snapshot to JSON, and let the Threat Score algorithm detect MDK4 attacks.
 ```bash
-sudo python3 main.py -i wlan0mon -w 00:11:22:33:44:55 AA:BB:CC:DD:EE:FF
+sudo python3 main.py -i wlan0mon -b 5G --pcap capture.pcap --export result.json
 ```
 
-**2. Audit Security with PCAP Saving (Red Team Mode)**
-Saves everything to `capture.pcap` while detecting handshakes and deauths in the GUI.
+### 3. Database Inspecting
+Once stopped, explore your retained environment statistics using standard SQL:
 ```bash
-sudo python3 main.py -i wlan0mon --pcap capture.pcap
-```
-
-**3. Narrow Band Scanning & Data Export**
-Only sweep the `2.4GHz` bands (faster channel cycling) and export the list of APs when exiting (`Ctrl+C`).
-```bash
-sudo python3 main.py -i wlan0mon -b 2.4G --export my_scan.csv
+sqlite3 homesync.db "SELECT * FROM security_events;"
+sqlite3 homesync.db "SELECT * FROM clients WHERE is_randomized=1;"
 ```
 
 ---
 
-## 📡 Advanced Functional Details
-
-### Target Client Association Tracking
-The sentinel doesn't just read beacons. It cross-references `Dot11` data frames and Probe Requests (`Dot11ProbeReq`) to build an active set of connected clients for each AP instance in real-time. This feeds the `Clients` column in the dashboard.
-
-### Hidden SSID Detection (De-Masking)
-SSIDs are often "hidden" by disabling beacon broadcasting (the SSID field contains null bytes `\x00`). HomeSync de-masks these actively in the terminal:
-- It listens for **Probe Requests** from devices that have previously connected to the hidden network.
-- It intercepts matching **Probe Responses** from the Access Point to confirm and reveal the network name in [Red] font on the dashboard.
-
-### Security Alert Panel
-A dedicated right-hand lower pane reads the raw packets and performs signature checks:
-- Any `Dot11Deauth` packet renders an instant alert, highlighting the target MAC.
-- Any `EAPOL` frame renders a WPA handshake alert, capturing the key negotiation vectors for the associated devices.
+## ⚠️ Known Linux Caveats & Troubleshooting
+- **Flickering Data**: High AP count with `python-rich` may cause redraw jitter. Adjust the `refresh_per_second` variable in `main.py` if your terminal emulator is slow.
+- **Permission Denied**: `scapy` raw sockets require `sudo`.
+- **Sandbox Mode**: For UI testing, running it without `sudo` forces mock data.
 
 ---
-
-## ⚠️ Troubleshooting
-
-- **No Packets Captured**: Ensure the interface is actually in `monitor` mode. Run `iwconfig` to verify. Using `--interface wlan0` will not work if the interface expects `wlan0mon`.
-- **Permission Denied**: The script requires raw socket access; always use `sudo`.
-- **Channel Hopping Stutter**: The app cycles through 2.4GHz and 5GHz channels continuously. If an AP flickers, it's because it broadcasts on a channel currently not being sniffed. Restrict hopping via `-b 2.4G` if you are only focused on 2.4GHz targets.
-
-## ⚖️ Legal Disclaimer
-This tool is intended for **Parental Control, Systems Auditing, and Authorized Personal Property Monitoring** only. Passively monitoring public Wi-Fi is generally legal for security research, but you should never attempt to intercept encrypted traffic or disrupt services without explicit permission from the network owner.
-
----
-*Built tightly with Python 3 and Scapy | Providing visual intelligence for Linux terminal warriors.*
+*Command the spectrum natively through the Linux terminal.*

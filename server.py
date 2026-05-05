@@ -28,7 +28,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                     <span style="color: #ff7b72;">[INFO]</span> The frontend preview is disabled because this is a pure terminal application.<br><br>
                     To run the visually beautiful terminal dashboard, copy the code to your local machine and execute:
                 </div>
-                <code>pip install rich scapy<br><br>sudo python3 main.py</code>
+                <code>pip install -r requirements.txt<br><br>sudo python3 main.py -h</code>
                 <p><br>Note: For actual packet sniffing, you must run it locally with a monitor-mode compatible Wi-Fi adapter (e.g., wlan0mon).</p>
             </div>
         </body>
