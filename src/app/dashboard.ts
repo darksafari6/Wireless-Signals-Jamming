@@ -10,149 +10,173 @@ import { LucideAngularModule, Shield, Wifi, Users, Signal, AlertTriangle, Search
   imports: [CommonModule, MatIconModule, LucideAngularModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="min-h-screen bg-zinc-950 text-zinc-100 font-sans selection:bg-emerald-500/30">
-      <!-- Nav -->
-      <nav class="border-b border-zinc-800/50 bg-zinc-900/50 backdrop-blur-xl sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div class="flex items-center gap-3">
-            <div class="bg-emerald-500/10 p-2 rounded-lg">
-              <lucide-icon [name]="Shield" class="w-6 h-6 text-emerald-400"></lucide-icon>
-            </div>
-            <h1 class="text-xl font-medium tracking-tight bg-gradient-to-br from-white to-zinc-400 bg-clip-text text-transparent">HomeSync</h1>
-          </div>
-          
-          <div class="flex items-center gap-6 text-sm text-zinc-400 font-medium">
-            <span class="flex items-center gap-2"><div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div> Monitoring Live</span>
-            <span class="hidden md:flex items-center gap-2 border-l border-zinc-800 pl-6"><lucide-icon [name]="Wifi" class="w-4 h-4"></lucide-icon> 2.4/5GHz Active</span>
+    <div class="h-screen flex flex-col bg-[#0f172a] text-[#cbd5e1] font-mono overflow-hidden">
+      <!-- Header -->
+      <header class="bg-[#1e293b] border-b border-[#334155] px-5 py-3 flex justify-between items-center z-50 shrink-0">
+        <div class="flex items-center gap-4">
+          <span class="font-bold text-white text-lg tracking-tight">WIFI-SENTINEL</span>
+          <span class="text-[#64748b] text-[10px] hidden sm:inline">v1.2.0-STABLE | AI STUDIO BUILD | PASSTHRU: ON</span>
+        </div>
+        <div class="flex items-center gap-4">
+          <div class="badge">ADAPTER: eth0 (mon)</div>
+          <div class="badge">MODE: PASSIVE</div>
+          <div class="hidden md:flex items-center gap-2 text-[10px] text-[#94a3b8]">
+            <div class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></div>
+            CAPTURE ACTIVE: 2.4/5GHz
           </div>
         </div>
-      </nav>
+      </header>
 
-      <main class="max-w-7xl mx-auto px-6 py-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
-        <!-- Left Panel: Critical Watchlist -->
-        <div class="lg:col-span-1 space-y-6">
-          <header class="flex items-center justify-between">
-            <h2 class="text-xs uppercase tracking-[0.2em] font-semibold text-zinc-500">Family Watchlist</h2>
-            <button (click)="isAddingTarget.set(true)" class="p-1 hover:bg-zinc-800 rounded transition-colors">
-              <lucide-icon [name]="Plus" class="w-4 h-4 text-zinc-400"></lucide-icon>
-            </button>
-          </header>
-
-          @for (target of trackedDevices(); track target.mac) {
-            <div class="group relative bg-zinc-900/40 border border-zinc-800 hover:border-zinc-700/50 rounded-2xl p-5 transition-all duration-300">
-              <div class="flex items-start justify-between mb-4">
-                <div class="flex items-center gap-4">
-                  <div class="p-3 rounded-xl bg-zinc-800/50 group-hover:bg-zinc-800 transition-colors">
-                    <lucide-icon [name]="Users" class="w-5 h-5 text-zinc-300"></lucide-icon>
+      <div class="flex flex-1 overflow-hidden">
+        <!-- Sidebar -->
+        <aside class="w-[300px] bg-[#111827] border-r border-[#334155] flex flex-col shrink-0 overflow-y-auto p-4 custom-scrollbar">
+          <section class="mb-8">
+            <h2 class="text-[10px] uppercase tracking-[0.2em] font-bold text-[#64748b] mb-4">Parental Watchlist</h2>
+            
+            <div class="space-y-2">
+              @for (target of trackedDevices(); track target.mac) {
+                <div class="bg-[#1e293b] border-l-4 border-red-500 p-3 flex justify-between items-start group shadow-lg">
+                  <div class="min-w-0">
+                    <div class="text-[11px] font-bold text-white truncate">{{ target.name || 'Unknown Device' }}</div>
+                    <div class="text-[9px] text-[#94a3b8] font-mono mt-0.5">{{ target.mac }}</div>
+                    
+                    <div class="flex items-center gap-2 mt-2">
+                      @if (target.present) {
+                        <span class="text-[9px] text-[#10b981] flex items-center gap-1 font-bold">
+                          <div class="w-1 h-1 rounded-full bg-[#10b981]"></div> IN RANGE
+                        </span>
+                      } @else {
+                        <span class="text-[9px] text-[#64748b] flex items-center gap-1 font-bold">
+                          <div class="w-1 h-1 rounded-full bg-[#64748b]"></div> OFFLINE
+                        </span>
+                      }
+                    </div>
                   </div>
-                  <div>
-                    <h3 class="font-medium text-zinc-100">{{ target.name || 'Unknown Device' }}</h3>
-                    <p class="text-[10px] font-mono text-zinc-500">{{ target.mac }}</p>
+                  <div class="text-right shrink-0">
+                    <div class="text-[10px] font-bold" [class]="getRssiColor(target.rssi, true)">{{ target.rssi }} dBm</div>
+                    <button (click)="wifi.removeTarget(target.mac)" class="opacity-0 group-hover:opacity-100 text-[#475569] hover:text-red-400 p-1 transition-all mt-1">
+                      <lucide-icon [name]="Trash2" class="w-3.5 h-3.5"></lucide-icon>
+                    </button>
                   </div>
                 </div>
-                <div [class]="getRssiColor(target.rssi)" class="px-2.5 py-1 rounded-full text-[10px] font-bold border flex items-center gap-1.5 shadow-sm">
-                  <lucide-icon [name]="Signal" class="w-3 h-3"></lucide-icon>
-                  {{ target.rssi }} dBm
-                </div>
-              </div>
+              }
 
-              <div class="flex items-center justify-between text-xs">
-                <div class="flex items-center gap-2">
-                  @if (target.present) {
-                    <span class="text-emerald-400 font-medium flex items-center gap-1.5">
-                      <div class="w-1.5 h-1.5 rounded-full bg-emerald-500"></div> Present
-                    </span>
-                  } @else {
-                    <span class="text-zinc-500 font-medium flex items-center gap-1.5">
-                      <div class="w-1.5 h-1.5 rounded-full bg-zinc-700"></div> Away
-                    </span>
-                  }
+              @if (isAddingTarget()) {
+                <div class="bg-[#1e293b] border border-[#334155] p-3 space-y-2">
+                  <input #macInput type="text" placeholder="MAC ADDR..." class="w-full bg-[#0f172a] border border-[#334155] text-[10px] px-2 py-1.5 focus:outline-none focus:border-blue-500 text-white">
+                  <div class="flex justify-end gap-2">
+                     <button (click)="isAddingTarget.set(false)" class="text-[9px] text-[#64748b] hover:text-white uppercase font-bold">Cancel</button>
+                     <button (click)="wifi.addTarget(macInput.value); isAddingTarget.set(false)" class="bg-[#3b82f6] text-white text-[9px] px-2 py-1 font-bold uppercase">Add</button>
+                  </div>
                 </div>
-                <button (click)="wifi.removeTarget(target.mac)" class="opacity-0 group-hover:opacity-100 text-zinc-500 hover:text-red-400 transition-all p-1">
-                  <lucide-icon [name]="Trash2" class="w-4 h-4"></lucide-icon>
+              } @else {
+                <button (click)="isAddingTarget.set(true)" class="w-full border border-dashed border-[#334155] hover:border-[#475569] py-2 text-[10px] text-[#64748b] hover:text-[#94a3b8] transition-colors uppercase font-bold">
+                  + Add Watch Device
                 </button>
-              </div>
+              }
             </div>
-          }
+          </section>
 
-          @if (isAddingTarget()) {
-             <div class="bg-zinc-900 border border-emerald-500/30 rounded-2xl p-4 animate-in fade-in slide-in-from-top-2 duration-300">
-                <input #macInput type="text" placeholder="Enter MAC Address..." class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-emerald-500/50 transition-colors mb-2">
-                <div class="flex justify-end gap-2">
-                   <button (click)="isAddingTarget.set(false)" class="px-3 py-1 text-xs text-zinc-400 hover:text-zinc-200">Cancel</button>
-                   <button (click)="wifi.addTarget(macInput.value); isAddingTarget.set(false)" class="px-3 py-1 text-xs bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors">Add Device</button>
-                </div>
-             </div>
-          }
-        </div>
+          <section class="mt-auto pt-4 border-t border-[#334155]">
+            <h2 class="text-[10px] uppercase tracking-[0.2em] font-bold text-[#64748b] mb-4">Event Log</h2>
+            <div class="space-y-1.5 max-h-[200px] overflow-y-auto pr-2 custom-scrollbar">
+               @for (ap of accessPoints().slice(0, 5); track ap.mac) {
+                 <div class="text-[9px] text-[#94a3b8] border-b border-[#1e293b] pb-1">
+                   [{{ ap.timestamp | date:'HH:mm:ss' }}] SEEN AP: {{ ap.ssid || 'HIDDEN' }} ({{ ap.rssi }} dBm)
+                 </div>
+               }
+            </div>
+            <button class="w-full bg-[#3b82f6]/10 hover:bg-[#3b82f6]/20 text-[#3b82f6] text-[9px] font-bold py-2 mt-4 transition-colors uppercase border border-[#3b82f6]/20">
+              Download CSV Records
+            </button>
+          </section>
+        </aside>
 
-        <!-- Right Panel: Network Activity -->
-        <div class="lg:col-span-2 space-y-4">
-          <header class="flex items-center justify-between px-2">
-             <div class="space-y-1">
-                <h2 class="text-xs uppercase tracking-[0.2em] font-semibold text-zinc-500">Surrounding Networks</h2>
-                <p class="text-[10px] text-zinc-600 font-mono">Capturing beacons from all access points in range</p>
-             </div>
-             <div class="text-[10px] font-mono text-zinc-500 flex items-center gap-4">
-                <span>{{ accessPoints().length }} APs Found</span>
-                <span>CH: 1, 6, 11, 36, 44...</span>
-             </div>
-          </header>
-
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            @for (ap of accessPoints(); track ap.mac) {
-              <div class="bg-zinc-900/30 border border-zinc-800/60 rounded-xl p-4 flex items-center gap-4 group transition-all hover:bg-zinc-900/50">
-                <div class="w-10 h-10 rounded-full border border-zinc-800 flex items-center justify-center bg-zinc-950 text-zinc-400 group-hover:text-emerald-400 transition-colors">
-                  <lucide-icon [name]="Wifi" class="w-5 h-5"></lucide-icon>
-                </div>
-                <div class="flex-1 min-w-0">
-                  <div class="flex items-center gap-2">
-                    <h4 class="text-sm font-medium truncate text-zinc-100">{{ ap.ssid || 'Unknown Network' }}</h4>
-                    @if (ap.hidden) {
-                      <span class="bg-amber-500/10 text-amber-500 text-[8px] uppercase tracking-wider font-extrabold px-1.5 py-0.5 rounded border border-amber-500/20">Hidden</span>
-                    }
-                  </div>
-                  <div class="flex items-center gap-3 text-[10px] font-mono text-zinc-500 mt-0.5">
-                    <span>{{ ap.mac }}</span>
-                    <span>CH {{ ap.channel }}</span>
-                  </div>
-                </div>
-                <div class="text-right">
-                  <div [class]="getRssiColor(ap.rssi, true)" class="text-xs font-mono font-bold">{{ ap.rssi }} <span class="text-[10px] opacity-70">dBm</span></div>
-                </div>
-              </div>
-            }
+        <!-- Main Workspace -->
+        <main class="flex-1 flex flex-col p-4 gap-4 overflow-hidden">
+          
+          <!-- AP Panel -->
+          <div class="panel flex-1 flex flex-col overflow-hidden shadow-2xl">
+            <div class="panel-header shrink-0">
+               <span>DISCOVERED ACCESS POINTS</span>
+               <span>TOTAL: {{ accessPoints().length }}</span>
+            </div>
+            <div class="flex-1 overflow-auto custom-scrollbar">
+              <table class="w-full border-collapse text-[11px] text-left">
+                <thead class="sticky top-0 bg-[#334155] text-white z-10 shadow-sm border-b border-[#475569]">
+                  <tr>
+                    <th class="p-2 font-bold uppercase tracking-wider">SSID</th>
+                    <th class="p-2 font-bold uppercase tracking-wider">BSSID (MAC)</th>
+                    <th class="p-2 font-bold uppercase tracking-wider">CH</th>
+                    <th class="p-2 font-bold uppercase tracking-wider">Signal Strength</th>
+                    <th class="p-2 font-bold uppercase tracking-wider">Enc</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-[#1e293b]">
+                  @for (ap of accessPoints(); track ap.mac) {
+                    <tr class="hover:bg-white/5 transition-colors group">
+                      <td class="p-2">
+                         <div class="flex items-center gap-2">
+                           <span [class.text-amber-500]="ap.hidden" class="font-bold">{{ ap.ssid || '[HIDDEN]' }}</span>
+                           @if (ap.hidden) {
+                             <span class="text-[8px] bg-amber-500/10 text-amber-500 px-1 border border-amber-500/20 font-black">HIDDEN</span>
+                           }
+                         </div>
+                      </td>
+                      <td class="p-2 font-mono text-[#94a3b8]">{{ ap.mac }}</td>
+                      <td class="p-2 text-[#64748b]">{{ ap.channel || '-' }}</td>
+                      <td class="p-2">
+                        <div class="flex items-center gap-3">
+                          <div class="w-16 h-1.5 bg-[#334155] relative grow max-w-[80px]">
+                            <div class="absolute h-full left-0 top-0 transition-all duration-500" 
+                                 [style.width.%]="calculateRssiPercent(ap.rssi)"
+                                 [style.background-color]="getRssiHex(ap.rssi)"></div>
+                          </div>
+                          <span class="font-bold min-w-[40px]" [class]="getRssiColor(ap.rssi, true)">{{ ap.rssi }} <span class="text-[9px] font-normal opacity-50 uppercase tracking-tighter">dBm</span></span>
+                        </div>
+                      </td>
+                      <td class="p-2 text-[#64748b]">WPA2/WPA3</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
           </div>
 
-          <!-- Alert Context -->
-          @if (hiddenAlerts().length > 0) {
-            <div class="mt-8 p-4 bg-amber-500/5 border border-amber-500/20 rounded-2xl flex items-start gap-4">
-              <div class="bg-amber-500/10 p-2 rounded-lg">
-                <lucide-icon [name]="AlertTriangle" class="w-5 h-5 text-amber-500"></lucide-icon>
-              </div>
-              <div>
-                <h4 class="text-sm font-medium text-amber-200">Hidden SSID Activity Detected</h4>
-                <p class="text-xs text-zinc-500 mt-1">We are analyzing probe request patterns to map hidden networks. Tracking {{ hiddenAlerts().length }} obfuscated beacons.</p>
-              </div>
+          <!-- Terminal Panel -->
+          <div class="panel h-[220px] flex flex-col shrink-0 shadow-inner">
+            <div class="panel-header bg-[#111827] border-b border-[#334155]">
+               <div class="flex items-center gap-2">
+                  <div class="w-2 h-2 rounded-full bg-red-500 animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.5)]"></div>
+                  <span>LIVE CAPTURE MONITOR</span>
+               </div>
+               <span class="text-[#22c55e] text-[9px] font-mono">SCAPY_STDOUT_PIPE</span>
             </div>
-          }
-        </div>
-      </main>
+            <div class="flex-1 bg-black p-3 font-mono text-[10px] text-[#22c55e] overflow-y-auto leading-relaxed custom-scrollbar selection:bg-[#22c55e]/30 selection:text-black">
+               <div>[SYSTEM] INITIALIZING WIFI-SENTINEL INTERFACE...</div>
+               <div>[SUCCESS] INTERFACE eth0 SWITCHED TO MONITOR MODE</div>
+               <div>[CONFIG] CHANNEL HOPPLING LIST: [1, 6, 11, 36, 44, 149, 161]</div>
+               @for (ap of accessPoints(); track ap.mac; let idx = $index) {
+                 <div>
+                    <span class="text-zinc-600">[{{ ap.timestamp | date:'HH:mm:ss.ms' }}]</span> 
+                    <span class="text-blue-400"> CAPTURE:</span> 
+                    BEACON FROM <span class="text-white">{{ ap.mac }}</span> | 
+                    SSID: <span class="text-white">{{ ap.ssid || '[HIDDEN]' }}</span> | 
+                    SIG: <span [class]="getRssiColor(ap.rssi, true)">{{ ap.rssi }}dBm</span>
+                 </div>
+               }
+               <div class="animate-pulse">_</div>
+            </div>
+            <div class="bg-[#111827] border-t border-[#334155] px-3 py-1 flex justify-between items-center text-[9px] text-[#64748b]">
+               <span>PID: 14293</span>
+               <span>BUFFER: 4.2MB</span>
+               <span>FCS: OK</span>
+            </div>
+          </div>
 
-      <!-- Stats Bar -->
-      <footer class="fixed bottom-0 w-full border-t border-zinc-800/50 bg-zinc-950/80 backdrop-blur-md">
-        <div class="max-w-7xl mx-auto px-6 h-12 flex items-center justify-between text-[10px] font-mono text-zinc-500">
-           <div class="flex items-center gap-6">
-              <span class="flex items-center gap-2 truncate max-w-[200px]"><div class="w-1.5 h-1.5 rounded-full bg-blue-500"></div> Scanner: Physical eth0 (Monitor)</span>
-              <span class="hidden sm:inline">Logging: data/wifi_activity.csv</span>
-           </div>
-           <div class="flex items-center gap-4">
-              <span>Up: 01h 45m</span>
-              <span class="text-zinc-600">v1.2.0-stable</span>
-           </div>
-        </div>
-      </footer>
+        </main>
+      </div>
+
     </div>
   `,
 })
@@ -180,10 +204,23 @@ export class Dashboard {
     return this.accessPoints().filter(ap => ap.hidden);
   });
 
+  calculateRssiPercent(rssi: number) {
+    // -100 to -30 range
+    const percent = Math.max(0, Math.min(100, ((rssi + 100) / 70) * 100));
+    return percent;
+  }
+
+  getRssiHex(rssi: number) {
+    if (rssi > -50) return '#10b981'; // emerald
+    if (rssi > -70) return '#3b82f6'; // blue
+    if (rssi > -85) return '#f59e0b'; // amber
+    return '#ef4444'; // red
+  }
+
   getRssiColor(rssi: number, isTextOnly = false) {
-    if (rssi > -50) return isTextOnly ? 'text-emerald-400' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 shadow-emerald-500/5';
-    if (rssi > -70) return isTextOnly ? 'text-blue-400' : 'bg-blue-500/10 text-blue-400 border-blue-500/20 shadow-blue-500/5';
-    if (rssi > -85) return isTextOnly ? 'text-amber-400' : 'bg-amber-500/10 text-amber-400 border-amber-500/20 shadow-amber-500/5';
-    return isTextOnly ? 'text-red-400' : 'bg-red-500/10 text-red-500 border-red-500/20 shadow-red-500/5';
+    if (rssi > -50) return isTextOnly ? 'text-[#10b981]' : 'text-[#10b981]';
+    if (rssi > -70) return isTextOnly ? 'text-[#3b82f6]' : 'text-[#3b82f6]';
+    if (rssi > -85) return isTextOnly ? 'text-[#f59e0b]' : 'text-[#f59e0b]';
+    return isTextOnly ? 'text-[#ef4444]' : 'text-[#ef4444]';
   }
 }

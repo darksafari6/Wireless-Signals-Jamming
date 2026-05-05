@@ -8,16 +8,29 @@
 }
 
 body {
-  @apply bg-zinc-950 text-zinc-100 antialiased;
+  @apply bg-[#0f172a] text-[#cbd5e1] antialiased font-mono;
 }
 
 /* Custom scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 4px;
+  height: 4px;
 }
 ::-webkit-scrollbar-track {
-  @apply bg-transparent;
+  @apply bg-[#0f172a];
 }
 ::-webkit-scrollbar-thumb {
-  @apply bg-zinc-800 rounded-full hover:bg-zinc-700 transition-colors;
+  @apply bg-[#334155] rounded-none hover:bg-[#475569] transition-colors;
+}
+
+.panel {
+  @apply bg-[#1e293b] border border-[#334155] rounded-none;
+}
+
+.panel-header {
+  @apply bg-[#334155] px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-white flex justify-between items-center;
+}
+
+.badge {
+  @apply bg-[#064e3b] text-[#34d399] px-2 py-0.5 rounded-sm text-[10px] font-bold uppercase tracking-widest;
 }
