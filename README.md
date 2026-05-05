@@ -1,14 +1,24 @@
-# 🛡️ HomeSync Wi-Fi Sentinel
+# 🛡️ HomeSync Wi-Fi Sentinel (Python TUI Edition)
 ### Professional Parental Monitoring & Network Surveillance Dashboard
 
-HomeSync is a high-density Wi-Fi surveillance tool designed for **Linux (BlackArch, Kali, Raspberry Pi OS)**. It bridges the gap between low-level packet sniffing and parent-friendly visual monitoring. It allows you to track household device presence, monitor signal strength (RSSI), and detect hidden SSIDs used by unauthorized access points.
+HomeSync is a high-density Wi-Fi surveillance tool designed strictly as a **Python Terminal User Interface (TUI)**. Built using the `rich` library and `scapy`, it bridges the gap between low-level packet sniffing and parent-friendly visual monitoring directly in your terminal. It allows you to track household device presence, monitor signal strength (RSSI), and detect hidden SSIDs used by unauthorized access points.
 
 ---
 
-## 🛠️ System Architecture
-The project operates in two layers:
-1.  **The Engine (Python/Scapy)**: A backend script running in `monitor mode` that captures raw 802.11 management frames.
-2.  **The Interface (Angular/Node.js)**: A high-density "Mission Control" dashboard that visualizes network activity and device tracks.
+## 📸 TUI Dashboard Highlights
+The terminal UI runs directly in your SSH session or local terminal, offering a split-pane "Mission Control" view:
+- **📡 Surrounding Networks**: Live, color-coded feed of all Access Points, updated multiple times per second. Sorts automatically by signal strength (RSSI).
+- **👨‍👩‍👧 Family Watchlist**: A dedicated sidebar to monitor specific family devices (phones, laptops) via their MAC addresses to track when they enter or leave the house.
+- **🚫 Hidden Network Detection**: Detects SSIDs that are marked as "Hidden" and automatically de-masks them if a client probes for them.
+
+---
+
+## 🛠️ System Architecture & Dependencies
+This is a 100% Python project.
+
+- **`scapy`**: For intercepting raw 802.11 management frames (Beacons, Probes).
+- **`rich`**: For the beautiful, lightweight, and hardware-accelerated terminal interface.
+- **Root Privileges**: Required to access hardware in monitor mode.
 
 ---
 
@@ -25,23 +35,22 @@ To capture Wi-Fi activity without being connected to a network, you **MUST** hav
 
 ## 📥 Installation & Setup
 
-### 1. Preparing the Linux System
-Ensure your system is updated and install the required tools:
+Ensure your system is updated and install the required system tools:
 ```bash
 # For Debian/Ubuntu/Pi OS
-sudo apt update && sudo apt install aircrack-ng tcpdump python3-scapy -y
+sudo apt update && sudo apt install aircrack-ng tcpdump python3-pip -y
 
-# For BlackArch/Arch Linux
-sudo pacman -S aircrack-ng tcpdump python-scapy
+# Install Python Requirements
+pip3 install rich scapy
 ```
 
-### 2. Enabling Monitor Mode
+### 1. Enabling Monitor Mode
 You must switch your interface to monitor mode before running the software.
 ```bash
 # Locate your interface (usually wlan0)
 iw dev
 
-# Kill conflicting processes
+# Kill conflicting processes (NetworkManager, wpa_supplicant)
 sudo airmon-ng check kill
 
 # Start monitor mode
@@ -51,51 +60,47 @@ sudo airmon-ng start wlan0
 iwconfig
 ```
 
-### 3. Deploying the Dashboard
-The dashboard provides the visual "Watchlist" and live log feed.
-```bash
-# Install Node.js dependencies
-npm install
-
-# Build the Angular application
-npm run build
-
-# Start the server
-npm run start
+### 2. Configure the App
+Edit `main.py` and modify the configuration block to suit your needs:
+```python
+# main.py
+INTERFACE = "wlan0mon" # Set this to your monitor interface
+watchlist = [
+    "00:11:22:33:44:55", # Add your child's phone MAC
+    "AA:BB:CC:DD:EE:FF"  # Add family laptop MAC
+]
 ```
 
-### 4. Running the Sniffer
-Execute the Python script with root privileges to begin capturing packets:
+### 3. Running the Sentinel
+Execute the Python script with root privileges to begin capturing packets and plotting the UI:
 ```bash
-sudo python3 sentinel.py
+sudo python3 main.py
 ```
+*(Note: If you run it without `sudo`, it will launch in a simulated Sandbox mode to preview the UI design without accessing hardware.)*
 
 ---
 
-## 📡 Advanced Features
+## 📡 Advanced Functional Details
 
-### Hidden SSID Detection
-SSIDs are often "hidden" by disabling beacon broadcasting. HomeSync de-masks these by:
-- Listening for **Probe Requests** from devices that have previously connected to the hidden network.
-- Capturing **Probe Responses** from the Access Point to confirm the network name.
+### Hidden SSID Detection (De-Masking)
+SSIDs are often "hidden" by disabling beacon broadcasting (the SSID field contains null bytes `\x00`). HomeSync de-masks these actively in the terminal:
+- It listens for **Probe Requests** from devices that have previously connected to the hidden network.
+- It intercepts matching **Probe Responses** from the Access Point to confirm and reveal the network name in Red font on the dashboard.
 
-### Parental Control: MAC Tracking
-1.  Locate your child's phone/laptop MAC address in the "Surrounding Networks" table.
-2.  Add the MAC to the **Family Watchlist** on the sidebar.
-3.  **RSSI Thresholds**: 
-    - `-30 to -50 dBm`: The device is likely in the same room.
-    - `-70 to -85 dBm`: The device is near the edge of the house/yard.
-    - `Offline`: The device has left the premises or been turned off.
+### Parental Control: MAC Tracking Logic
+1.  Add the MAC to the **watchlist** array.
+2.  **RSSI Thresholds (Proximity Estimation)**: 
+    - `-30 to -50 dBm` (Green): The device is likely in the same room.
+    - `-50 to -70 dBm` (Yellow): The device is in a neighboring room.
+    - `-70 to -85 dBm` (Red): The device is near the edge of the house/yard.
+    - `OFFLINE`: The device has left the premises or been turned off (timeout after 30 seconds of no packets).
 
 ---
 
 ## ⚠️ Troubleshooting
-- **No Packets Captured**: Ensure the interface is actually in `monitor` mode (Run `iwconfig`).
-- **Permission Denied**: Python script `sentinel.py` requires raw socket access; always use `sudo`.
-- **Channel Issues**: If capturing is slow, ensure `sentinel.py` is hopping across both 2.4GHz and 5GHz channels.
+- **No Packets Captured**: Ensure the interface is actually in `monitor` mode. Run `iwconfig` to verify.
+- **Permission Denied**: The script requires raw socket access; always use `sudo`.
+- **Channel Hopping Stutter**: The app cycles through 2.4GHz and 5GHz channels continuously. If an AP flickers, it's because it broadcasts on a channel currently not being sniffed.
 
 ## ⚖️ Legal Disclaimer
-This tool is intended for **Parental Control and Authorized Personal Property Monitoring** only. Passively monitoring public Wi-Fi is generally legal for security research, but you should never attempt to intercept encrypted traffic or disrupt services (jamming) without explicit permission.
-
----
-*Built with Angular 21, Python 3, and Scapy | Designed for Modern Linux Security Distributions.*
+This tool is intended for **Parental Control and Authorized Personal Property Monitoring** only. Passively monitoring public Wi-Fi is generally legal for security research, but you should never attempt to intercept encrypted traffic or disrupt services without explicit permission.
