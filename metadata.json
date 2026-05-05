@@ -1,0 +1,6 @@
+{
+  "name": "HomeSync Wi-Fi Monitor",
+  "description": "Real-time Wi-Fi activity and device tracking for parental control. Monitor signal strength, detect hidden SSIDs, and track presence via MAC address.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
