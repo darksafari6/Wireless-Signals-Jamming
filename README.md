@@ -1,52 +1,101 @@
-# HomeSync Wi-Fi Monitor
+# 🛡️ HomeSync Wi-Fi Sentinel
+### Professional Parental Monitoring & Network Surveillance Dashboard
 
-A real-time Wi-Fi surveillance and parental control dashboard.
+HomeSync is a high-density Wi-Fi surveillance tool designed for **Linux (BlackArch, Kali, Raspberry Pi OS)**. It bridges the gap between low-level packet sniffing and parent-friendly visual monitoring. It allows you to track household device presence, monitor signal strength (RSSI), and detect hidden SSIDs used by unauthorized access points.
 
-## 🚀 Overview
-HomeSync is designed to provide a "Mission Control" view of your home network environment. It monitors beacon frames, detects hidden SSIDs (via probe analysis), and tracks the presence of specific family devices based on MAC addresses and signal strength (RSSI).
+---
 
-## 🛠 Features
-- **Live Monitoring**: Real-time WebSocket stream of surrounding Wi-Fi activity.
-- **Parental Control**: Track when specific devices (phones, laptops) enter or leave the home range.
-- **Security Alerts**: Visual notification when hidden SSIDs or unusual network patterns are detected.
-- **Signal Tracking**: Color-coded RSSI levels to gauge device proximity.
+## 🛠️ System Architecture
+The project operates in two layers:
+1.  **The Engine (Python/Scapy)**: A backend script running in `monitor mode` that captures raw 802.11 management frames.
+2.  **The Interface (Angular/Node.js)**: A high-density "Mission Control" dashboard that visualizes network activity and device tracks.
 
-## 🔌 Hardware Integration (The Linux "Bridge")
-To use this with real antenna data (scapy/aircrack-ng) on a Linux system, use the following Python snippet to pipe data to the server:
+---
 
-```python
-# sensor.py
-from scapy.all import *
-import websocket # pip install websocket-client
-import json
+## 🔌 Hardware Requirements
+To capture Wi-Fi activity without being connected to a network, you **MUST** have a Wi-Fi adapter that supports **Monitor Mode** and **Packet Injection**.
 
-# Replace with your App URL
-WS_URL = "ws://your-app-url:3000"
+### Recommended Chipsets:
+- **Atheros AR9271** (Alfa AWUS036NHA) - *Gold standard for Linux*
+- **Ralink RT3070** (Alfa AWUS036NH)
+- **Realtek RTL8812AU** (Requires specific drivers)
+- **Raspberry Pi 3/4/5** (Built-in chip supports monitor mode with `nexmon` patches)
 
-def packet_handler(pkt):
-    if pkt.haslayer(Dot11Beacon):
-        data = {
-            "type": "wifi_update",
-            "data": [{
-                "ssid": pkt.info.decode(),
-                "mac": pkt.addr2,
-                "rssi": pkt.dBm_AntSignal,
-                "type": "AP"
-            }]
-        }
-        # Send to web dashboard
-        # ws.send(json.dumps(data))
+---
 
-# Run on monitor-mode interface
-# sniff(iface="wlan0mon", prn=packet_handler)
+## 📥 Installation & Setup
+
+### 1. Preparing the Linux System
+Ensure your system is updated and install the required tools:
+```bash
+# For Debian/Ubuntu/Pi OS
+sudo apt update && sudo apt install aircrack-ng tcpdump python3-scapy -y
+
+# For BlackArch/Arch Linux
+sudo pacman -S aircrack-ng tcpdump python-scapy
 ```
 
-## 📦 Dependencies
-- **Frontend**: Angular 21, Tailwind CSS 4, Lucide Icons, Angular Material.
-- **Backend**: Node.js, Express, WS (WebSockets).
-- **External (Recommended)**: Scapy, Aircrack-ng (for monitor mode data capture).
+### 2. Enabling Monitor Mode
+You must switch your interface to monitor mode before running the software.
+```bash
+# Locate your interface (usually wlan0)
+iw dev
 
-## 📖 Deployment
-1. The app is pre-configured to run on port 3000.
-2. The UI is built using a "Technical Dashboard" design language.
-3. Use the **Watchlist** to add specific devices for tracking.
+# Kill conflicting processes
+sudo airmon-ng check kill
+
+# Start monitor mode
+sudo airmon-ng start wlan0
+
+# Verify interface name (usually wlan0mon)
+iwconfig
+```
+
+### 3. Deploying the Dashboard
+The dashboard provides the visual "Watchlist" and live log feed.
+```bash
+# Install Node.js dependencies
+npm install
+
+# Build the Angular application
+npm run build
+
+# Start the server
+npm run start
+```
+
+### 4. Running the Sniffer
+Execute the Python script with root privileges to begin capturing packets:
+```bash
+sudo python3 sentinel.py
+```
+
+---
+
+## 📡 Advanced Features
+
+### Hidden SSID Detection
+SSIDs are often "hidden" by disabling beacon broadcasting. HomeSync de-masks these by:
+- Listening for **Probe Requests** from devices that have previously connected to the hidden network.
+- Capturing **Probe Responses** from the Access Point to confirm the network name.
+
+### Parental Control: MAC Tracking
+1.  Locate your child's phone/laptop MAC address in the "Surrounding Networks" table.
+2.  Add the MAC to the **Family Watchlist** on the sidebar.
+3.  **RSSI Thresholds**: 
+    - `-30 to -50 dBm`: The device is likely in the same room.
+    - `-70 to -85 dBm`: The device is near the edge of the house/yard.
+    - `Offline`: The device has left the premises or been turned off.
+
+---
+
+## ⚠️ Troubleshooting
+- **No Packets Captured**: Ensure the interface is actually in `monitor` mode (Run `iwconfig`).
+- **Permission Denied**: Python script `sentinel.py` requires raw socket access; always use `sudo`.
+- **Channel Issues**: If capturing is slow, ensure `sentinel.py` is hopping across both 2.4GHz and 5GHz channels.
+
+## ⚖️ Legal Disclaimer
+This tool is intended for **Parental Control and Authorized Personal Property Monitoring** only. Passively monitoring public Wi-Fi is generally legal for security research, but you should never attempt to intercept encrypted traffic or disrupt services (jamming) without explicit permission.
+
+---
+*Built with Angular 21, Python 3, and Scapy | Designed for Modern Linux Security Distributions.*
